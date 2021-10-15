@@ -8,7 +8,7 @@ cria_diretorios_goFsckYourself()
 	echo "***** PROGRAMAÇÃO CONCORRENTE - PROVA 3 ********"
 	echo "***** ALUNOS: WELLINGTON ARAUJO SILVA **********"
 	echo "************* GILMAR GONZAGA DA SILVA **********"
-	echo "************* GUSTAVO LUIZ BISPO DOS SANTOS*****"
+	echo "************* GUSTAVO LUIZ BISPO DOS SANTOS ****"
 	echo "************************************************"
 	echo ""
 	echo "* Criando árvore de diretórios para execução do FSCK"
