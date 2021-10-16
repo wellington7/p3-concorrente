@@ -28,16 +28,16 @@ public class Bucket {
 	}
 	
 	public void run(Integer requestSize) {
-		System.out.println("Verificando Requisição de tamanho " + requestSize);
+		System.out.println("Verificando Requisicao de tamanho " + requestSize);
 		
 		if (!limitCapWait(requestSize)) {
-			System.out.println("Requisição de tamanho " + requestSize + " bloqueada");
+			System.out.println("Requisicao de tamanho " + requestSize + " bloqueada");
 			blockBucket(requestSize);
 		}
 		
-		System.out.println("Requisição de tamanho " + requestSize + " sendo efetuada");
+		System.out.println("Requisicao de tamanho " + requestSize + " sendo efetuada");
 		remove(requestSize);
-		System.out.println("Requisição de tamanho " + requestSize + " efetuada com sucesso");
+		System.out.println("Requisicao de tamanho " + requestSize + " efetuada com sucesso");
 		System.out.println(tokensOnBucket + "/" + capacity);
 	}
 	
