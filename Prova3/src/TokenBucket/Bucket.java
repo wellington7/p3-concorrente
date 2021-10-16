@@ -13,11 +13,13 @@ public class Bucket {
 	private Integer tokensOnBucket = 0;
 	private Integer neededToUnblock = 0;
 	private Boolean isBlocked = false;
-	private Semaphore semaphore = new Semaphore(1);
+	private Semaphore semaphore;
+	private Semaphore someoneIsRunning = new Semaphore(1);
 	
-	public Bucket(Integer capacity, Integer timeToAddTokens) {
+	public Bucket(Integer capacity, Integer timeToAddTokens, Semaphore semaphore) {
 		this.capacity = capacity;
 		this.timeToAddTokens = timeToAddTokens;
+		this.semaphore = semaphore; 
 //		bucketSlots = new CopyOnWriteArrayList<Token>();
 		
 		System.out.println("Preenchendo Bucket com Tokens");
@@ -28,25 +30,17 @@ public class Bucket {
 	}
 	
 	public void run(Integer requestSize) {
-		System.out.println("Verificando Requisicao de tamanho " + requestSize);
-		
-		if (!limitCapWait(requestSize)) {
-			System.out.println("Requisicao de tamanho " + requestSize + " bloqueada");
-			blockBucket(requestSize);
+		while (true) {
+			try {
+				remove(requestSize);
+				break;
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
-		
-		System.out.println("Requisicao de tamanho " + requestSize + " sendo efetuada");
-		remove(requestSize);
-		System.out.println("Requisicao de tamanho " + requestSize + " efetuada com sucesso");
-		System.out.println(tokensOnBucket + "/" + capacity);
 	}
 	
-	private boolean limitCapWait(Integer requestSize) {
-		if (requestSize > tokensOnBucket) {
-			return false;
-		}
-		return true;
-	}
 	
 	private void startInterval() {
 		new Timer().scheduleAtFixedRate(new TimerTask(){
@@ -59,8 +53,8 @@ public class Bucket {
 					  System.out.println(Thread.activeCount() - 2 + " Threads rodando");
 				}
 				
-				// Se a quantidade de tokens atingir o necessário para desbloquear, desbloqueia					  
-				if (tokensOnBucket >= neededToUnblock && isBlocked) {
+ 				// Se a quantidade de tokens atingir o necessário para desbloquear, desbloqueia					  
+				if (tokensOnBucket >= neededToUnblock && semaphore.availablePermits() == 0) {
 					semaphore.release();
 					isBlocked = false;
 					neededToUnblock = 0;
@@ -69,41 +63,45 @@ public class Bucket {
 		}, 0, this.timeToAddTokens);
 	}
 	
-	private void blockBucket(Integer requestSize) {
-		neededToUnblock = requestSize;
-		isBlocked = true;
-		
-		semaphore.acquireUninterruptibly();
-	}
-	
-	private void remove(Integer requestSize) {
-//		for (int i = 0; i < requestSize; i++){
-//			bucketSlots.remove(i);
-//		}
+	private void remove(Integer requestSize) throws InterruptedException {
+		while (!limitCapWait(requestSize)) {
+			neededToUnblock = requestSize;
+			isBlocked = true;
+			
+			System.out.println("BLOQUEOU>>>>>> Tamanho: " + requestSize + " - BucketTokens: " + tokensOnBucket);
+			semaphore.acquire();
+			System.out.println("DESBLOQUEOU>>>>>> Tamanho: " + requestSize + " - BucketTokens: " + tokensOnBucket);
+		} 			
+
+		System.out.println("PASSOU>>>>>> Tamanho: " + requestSize + " - BucketTokens: " + tokensOnBucket);
+		System.out.println("Requisicao de tamanho " + requestSize + " sendo efetuada");
 		tokensOnBucket -= requestSize;
+		System.out.println("Requisicao de tamanho " + requestSize + " efetuada com sucesso");
+		System.out.println(tokensOnBucket + "/" + capacity);
     }
+	
 	private void add(Integer quantity) {
-//	    for (int i = 0; i < quantity; i++){
-//			bucketSlots.add(new Token());
-//		}
 	    tokensOnBucket += quantity;
     }
-
 	
+	private boolean limitCapWait(Integer requestSize) {
+		if (requestSize > tokensOnBucket) {
+			return false;
+		}
+		return true;
+	}
+
  	public Integer getCapacity() {
 		return capacity;
 	}
 
-	
 	public void setCapacity(Integer capacity) {
 		this.capacity = capacity;
 	}
-
 	
 //	public CopyOnWriteArrayList<Token> getBucketSlots() {
 //		return bucketSlots;
 //	}
-
 	
 //	public void setBucketSlots(CopyOnWriteArrayList<Token> bucketSlots) {
 //		this.bucketSlots = bucketSlots;
