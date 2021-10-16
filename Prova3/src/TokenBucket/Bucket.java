@@ -1,64 +1,112 @@
 package TokenBucket;
 
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Semaphore;
 
 public class Bucket {
 	
-	private Long capacity = 0L;
-	private CopyOnWriteArrayList<Token> bucketSlots;
+	private Integer timeToAddTokens = 5000; 
+	private Integer capacity = 0;
+//	private CopyOnWriteArrayList<Token> bucketSlots;
+	private Integer tokensOnBucket = 0;
+	private Integer neededToUnblock = 0;
+	private Boolean isBlocked = false;
+	private Semaphore semaphore = new Semaphore(1);
 	
-	public Bucket(Long capacity) {
+	public Bucket(Integer capacity, Integer timeToAddTokens) {
 		this.capacity = capacity;
-		bucketSlots = new CopyOnWriteArrayList<Token>();
+		this.timeToAddTokens = timeToAddTokens;
+//		bucketSlots = new CopyOnWriteArrayList<Token>();
+		
 		System.out.println("Preenchendo Bucket com Tokens");
-		fillBucket();
+		add(capacity);
 		System.out.println("Bucket Preenchido");
+		
+		startInterval();
 	}
 	
-	public void run(Long requestSize) {
-		System.out.println("Executando Requisicao");
-		while (true) {
-			if (limitCapWait(requestSize)) {
-				System.out.println("Efetuando Requisicao");
-				bucketSlots.stream();
-				System.out.println("Requisicao efetuada com sucesso");
-				break;
-			} else {
-				System.out.println("Requisicao Bloqueada");
-				break;
-			}
+	public void run(Integer requestSize) {
+		System.out.println("Verificando RequisiÃ§Ã£o de tamanho " + requestSize);
+		
+		if (!limitCapWait(requestSize)) {
+			System.out.println("RequisiÃ§Ã£o de tamanho " + requestSize + " bloqueada");
+			blockBucket(requestSize);
 		}
+		
+		System.out.println("RequisiÃ§Ã£o de tamanho " + requestSize + " sendo efetuada");
+		remove(requestSize);
+		System.out.println("RequisiÃ§Ã£o de tamanho " + requestSize + " efetuada com sucesso");
+		System.out.println(tokensOnBucket + "/" + capacity);
 	}
 	
-	//Função que faz o controle da adição e remoção de tokens
-	//Se conseguir efetuar requisição retorna true, se não retorna false
-	private boolean limitCapWait(Long requestSize) {
-		if (requestSize > capacity)
+	private boolean limitCapWait(Integer requestSize) {
+		if (requestSize > tokensOnBucket) {
 			return false;
-			//Fazer Controle de Tempo --- Um token é adicionado ao bucket a cada 1/R segundos
+		}
 		return true;
 	}
 	
-	private void fillBucket() {
-		for (int i=0; i<capacity; i++){
-			bucketSlots.add(new Token("xyz - " + i));
-		}
+	private void startInterval() {
+		new Timer().scheduleAtFixedRate(new TimerTask(){
+			@Override
+			public void run() {
+				//	Se tiver menos tokens do que a capacidade, adiciona			
+				if (tokensOnBucket < capacity){
+					  tokensOnBucket++;
+					  System.out.println("Adicionou no bucket " + tokensOnBucket + "/" + capacity);
+					  System.out.println(Thread.activeCount() - 2 + " Threads rodando");
+				}
+				
+				// Se a quantidade de tokens atingir o necessÃ¡rio para desbloquear, desbloqueia					  
+				if (tokensOnBucket >= neededToUnblock && isBlocked) {
+					semaphore.release();
+					isBlocked = false;
+					neededToUnblock = 0;
+				}
+			}
+		}, 0, this.timeToAddTokens);
 	}
+	
+	private void blockBucket(Integer requestSize) {
+		neededToUnblock = requestSize;
+		isBlocked = true;
+		
+		semaphore.acquireUninterruptibly();
+	}
+	
+	private void remove(Integer requestSize) {
+//		for (int i = 0; i < requestSize; i++){
+//			bucketSlots.remove(i);
+//		}
+		tokensOnBucket -= requestSize;
+    }
+	private void add(Integer quantity) {
+//	    for (int i = 0; i < quantity; i++){
+//			bucketSlots.add(new Token());
+//		}
+	    tokensOnBucket += quantity;
+    }
 
-	public Long getCapacity() {
+	
+ 	public Integer getCapacity() {
 		return capacity;
 	}
 
-	public void setCapacity(Long capacity) {
+	
+	public void setCapacity(Integer capacity) {
 		this.capacity = capacity;
 	}
 
-	public CopyOnWriteArrayList<Token> getBucketSlots() {
-		return bucketSlots;
-	}
+	
+//	public CopyOnWriteArrayList<Token> getBucketSlots() {
+//		return bucketSlots;
+//	}
 
-	public void setBucketSlots(CopyOnWriteArrayList<Token> bucketSlots) {
-		this.bucketSlots = bucketSlots;
-	}
+	
+//	public void setBucketSlots(CopyOnWriteArrayList<Token> bucketSlots) {
+//		this.bucketSlots = bucketSlots;
+//	}
 	
 }

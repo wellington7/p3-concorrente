@@ -1,5 +1,7 @@
 package Main;
 
+import java.util.ArrayList;
+
 import GoFsckYourself.Fsck;
 import TokenBucket.Bucket;
 import TokenBucket.Request;
@@ -10,25 +12,41 @@ public class Main {
 		
 		//*****TOKEN BUCKET*****
 		System.out.println("* TOKEN BUCKET - Iniciando a execucao");
-		Bucket bucket = new Bucket(36L);
-		//Cenário onde o Request pede uma quantidade menor do que a disponível no Bucket
-		System.out.println("* TOKEN BUCKET - CENARIO A - Requisicao de uma quantidade inferior de Tokens disponiveis no Bucket");
-		Request requestA = new Request(35L);
-		bucket.run(requestA.getSize());
-		//Cenário onde o Request pede uma quantidade igual a disponível no Bucket
-		System.out.println("* TOKEN BUCKET - CENARIO B - Requisicao de uma quantidade igual de Tokens disponiveis no Bucket");
-		Request requestB = new Request(36L);
-		bucket.run(requestB.getSize());
-		//Cenário onde o Request pede uma quantidade maior que a disponível no Bucket
-		System.out.println("* TOKEN BUCKET - CENARIO C - Requisicao de uma quantidade superior de Tokens disponiveis no Bucket");
-		Request requestC = new Request(37L);
-		bucket.run(requestC.getSize());
 		
-		//*****FSCK*****
-		System.out.println("");
-		System.out.println("* FSCK - Iniciando a execucao");
-		//System.out.println("Working Directory = " + System.getProperty("user.dir"));
-		Fsck fsck = new Fsck();
+		Integer bucketSize = 100;
+		Integer bucketTimeToAddToken = 100;
+		ArrayList<Request> requests = new ArrayList();
+		
+		// Gerando 100 requisicoes		
+		for (int i = 0; i < 20; i++) {
+			Request request = new Request(getRandomIntegerBetweenRange(bucketSize));
+			requests.add(request);
+		}
+		
+		Bucket bucket = new Bucket(bucketSize, bucketTimeToAddToken);
+		
+		
+		for (Request request : requests) {
+			new Thread() {
+				@Override
+			    public void run() {
+					bucket.run(request.getSize());
+				}
+			}.start();
+		}
+		
+		
+		
+//		//*****FSCK*****
+//		System.out.println("");
+//		System.out.println("* FSCK - Iniciando a execucao");
+//		System.out.println("Working Directory = " + System.getProperty("user.dir"));
+//		Fsck fsck = new Fsck();
+	}
+	
+	public static int getRandomIntegerBetweenRange(double max){
+	    int x = (int)(Math.random()*((max-1)+1))+1;
+	    return x;
 	}
 
 }

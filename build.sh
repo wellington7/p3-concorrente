@@ -1,5 +1,3 @@
-# WELLINGTON ARAUJO - PROVA 3
-
 #CRIA UMA ÁRVORE DE DIRETÓRIOS COM 3 NIVEIS
 cria_diretorios_goFsckYourself()
 {

@@ -2,18 +2,17 @@ package TokenBucket;
 
 public class Request {
 	
-	private Long size;
+	private Integer size;
 	
-	public Request(Long size) {
+	public Request(Integer size) {
 		this.size = size;
 	}
 
-	public Long getSize() {
+	public Integer getSize() {
 		return size;
 	}
 
-	public void setSize(Long size) {
+	public void setSize(Integer size) {
 		this.size = size;
 	}
-	
 }
